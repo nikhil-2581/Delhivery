@@ -18,7 +18,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<java.com.cryptic.model.User> getUser(@PathVariable Long id) {
+    public ResponseEntity<com.cryptic.model.User> getUser(@PathVariable Long id) {
         return userService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

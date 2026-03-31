@@ -2,7 +2,7 @@ package com.cryptic.service;
 
 import org.springframework.stereotype.Service;
 
-import java.com.cryptic.model.User;
+import com.cryptic.model.User;
 import java.util.Map;
 import java.util.Optional;
 
