@@ -1,10 +1,12 @@
 package com.cryptic.controller;
 
-import com.cryptic.model.Order;
+import com.cryptic.dto.PlaceOrderRequest;
+import com.cryptic.model.*;
 import com.cryptic.service.OrderService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -17,11 +19,9 @@ public class OrderController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createOrder(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> placeOrder(@RequestBody PlaceOrderRequest request) {
         try {
-            Long userId = Long.valueOf(body.get("userId").toString());
-            String item = body.get("item").toString();
-            return ResponseEntity.ok(orderService.create(userId, item));
+            return ResponseEntity.ok(orderService.place(request));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -32,5 +32,21 @@ public class OrderController {
         return orderService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<Order>> getOrdersByUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(orderService.findByUser(userId));
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<?> updateStatus(@PathVariable Long id,
+                                          @RequestBody Map<String, String> body) {
+        try {
+            OrderStatus newStatus = OrderStatus.valueOf(body.get("status"));
+            return ResponseEntity.ok(orderService.updateStatus(id, newStatus));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 }

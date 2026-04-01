@@ -1,3 +1,15 @@
 package com.cryptic.model;
 
-public record Order(Long id, Long userId, String item, String status) {}
+import java.time.Instant;
+import java.util.List;
+
+public record Order(
+        Long id,
+        Long userId,
+        List<OrderItem> items,
+        PricingSummary pricing,
+        OrderStatus status,
+        String deliveryAddress,
+        Instant placedAt,
+        Instant updatedAt
+) {}
