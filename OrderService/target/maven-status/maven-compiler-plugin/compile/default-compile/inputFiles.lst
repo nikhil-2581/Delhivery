@@ -13,5 +13,6 @@
 /Users/mr.cryptic/Desktop/Delihvery/OrderService/src/main/java/com/cryptic/model/OrderItem.java
 /Users/mr.cryptic/Desktop/Delihvery/OrderService/src/main/java/com/cryptic/client/UserClient.java
 /Users/mr.cryptic/Desktop/Delihvery/OrderService/src/main/java/com/cryptic/config/AppConfig.java
+/Users/mr.cryptic/Desktop/Delihvery/OrderService/src/main/java/com/cryptic/repo/OrderRepository.java
 /Users/mr.cryptic/Desktop/Delihvery/OrderService/src/main/java/com/cryptic/controller/OrderController.java
 /Users/mr.cryptic/Desktop/Delihvery/OrderService/src/main/java/com/cryptic/model/Order.java

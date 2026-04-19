@@ -1,47 +1,60 @@
 package com.cryptic.service;
 
 import com.cryptic.model.Address;
-import com.cryptic.model.FoodPreferences;
-import com.cryptic.model.UserProfile;
+import com.cryptic.model.User;
+import com.cryptic.repo.AddressRepository;
+import com.cryptic.repo.UserRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Service
+@Transactional
 public class UserService {
 
-    private static final Map<Long, UserProfile> USERS = Map.of(
-            1L, new UserProfile(
-                    1L, "Alice", "alice@example.com", "9000000001",
-                    List.of(
-                            new Address(1L, "Home", "12 MG Road", "Bengaluru", "560001", true),
-                            new Address(2L, "Work", "91 Koramangala", "Bengaluru", "560034", false)
-                    ),
-                    new FoodPreferences(false, List.of(), List.of("North Indian", "Chinese"))
-            ),
-            2L, new UserProfile(
-                    2L, "Bob", "bob@example.com", "9000000002",
-                    List.of(new Address(3L, "Home", "5 Anna Nagar", "Chennai", "600040", true)),
-                    new FoodPreferences(true, List.of("nuts"), List.of("South Indian"))
-            )
-    );
+    private final UserRepository userRepository;
+    private final AddressRepository addressRepository;
 
-    public Optional<UserProfile> findById(Long id) {
-        return Optional.ofNullable(USERS.get(id));
+    public UserService(UserRepository userRepository,
+                       AddressRepository addressRepository) {
+        this.userRepository = userRepository;
+        this.addressRepository = addressRepository;
     }
 
-    public Optional<Address> getDefaultAddress(Long userId) {
-        return findById(userId)
-                .flatMap(u -> u.addresses().stream()
-                        .filter(Address::isDefault)
-                        .findFirst());
+    public Optional<User> findById(Long id) {
+        return userRepository.findById(id);
     }
 
     public List<Address> getAddresses(Long userId) {
-        return findById(userId)
-                .map(UserProfile::addresses)
-                .orElse(List.of());
+        return addressRepository.findByUserId(userId);
+    }
+
+    public Optional<Address> getDefaultAddress(Long userId) {
+        return addressRepository.findByUserIdAndIsDefaultTrue(userId);
+    }
+
+    @Transactional
+    public User createUser(String name, String email, String phone) {
+        User user = new User(name, email, phone);
+        return userRepository.save(user);
+    }
+
+    @Transactional
+    public Address addAddress(Long userId, String label, String line1,
+                              String city, String pincode, boolean isDefault) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+
+        if (isDefault) {
+            addressRepository.findByUserIdAndIsDefaultTrue(userId)
+                    .ifPresent(existing -> {
+                        throw new IllegalStateException("A default address already exists. Update it first.");
+                    });
+        }
+
+        return addressRepository.save(
+                new Address(user, label, line1, city, pincode, isDefault));
     }
 }

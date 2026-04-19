@@ -5,6 +5,7 @@ import com.cryptic.client.UserClient;
 import com.cryptic.dto.OrderItemRequest;
 import com.cryptic.dto.PlaceOrderRequest;
 import com.cryptic.model.*;
+import com.cryptic.repo.OrderRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +28,7 @@ public class OrderServiceTest {
 
     @Mock UserClient userClient;
     @Mock NotificationClient notificationClient;
+    @Mock OrderRepository orderRepository;
     @Spy PricingService pricingService = new PricingService();
     @Spy  OrderStatusService statusService = new OrderStatusService();
 
@@ -46,10 +48,18 @@ public class OrderServiceTest {
         );
     }
 
+    private Order savedOrder(Long id, OrderStatus status) {
+        Order o = new Order(1L, status, "12 MG Road, Bengaluru",
+                360.0, 0.0, 0.0, 360.0);
+        // simulate what DB would return with an id
+        return o;
+    }
+
     @Test
     void place_validRequest_createsOrderWithPricing() {
         when(userClient.getUser(1L)).thenReturn(Optional.of(alice));
         when(userClient.getDefaultAddress(1L)).thenReturn(Optional.of(defaultAddress));
+        when(orderRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         PlaceOrderRequest req = new PlaceOrderRequest(
                 1L,
@@ -59,9 +69,9 @@ public class OrderServiceTest {
 
         Order result = orderService.place(req);
 
-        assertThat(result.status()).isEqualTo(OrderStatus.PLACED);
-        assertThat(result.pricing().subtotal()).isEqualTo(360.0);
-        assertThat(result.deliveryAddress()).contains("Bengaluru");
+        assertThat(result.getStatus()).isEqualTo(OrderStatus.PLACED);
+        assertThat(result.getSubtotal()).isEqualTo(360.0);
+        assertThat(result.getDeliveryAddress()).contains("Bengaluru");
         verify(notificationClient).notifyOrderPlaced(eq("alice@example.com"), any());
     }
 
@@ -94,47 +104,39 @@ public class OrderServiceTest {
 
     @Test
     void updateStatus_legalTransition_updatesOrder() {
+        Order existing = new Order(1L, OrderStatus.PLACED,
+                "12 MG Road, Bengaluru", 80.0, 30.0, 0.0, 110.0);
+
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(orderRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         when(userClient.getUser(1L)).thenReturn(Optional.of(alice));
-        when(userClient.getDefaultAddress(1L)).thenReturn(Optional.of(defaultAddress));
 
-        Order placed = orderService.place(new PlaceOrderRequest(
-                1L, List.of(new OrderItemRequest("Dosa", 1, 80.0)), null));
+        Order confirmed = orderService.updateStatus(1L, OrderStatus.CONFIRMED);
 
-        Order confirmed = orderService.updateStatus(placed.id(), OrderStatus.CONFIRMED);
-
-        assertThat(confirmed.status()).isEqualTo(OrderStatus.CONFIRMED);
+        assertThat(confirmed.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
         verify(notificationClient).notifyStatusChange(eq("alice@example.com"), any());
     }
 
     @Test
     void updateStatus_illegalTransition_throwsAndDoesNotNotify() {
-        when(userClient.getUser(1L)).thenReturn(Optional.of(alice));
-        when(userClient.getDefaultAddress(1L)).thenReturn(Optional.of(defaultAddress));
+        Order existing = new Order(1L, OrderStatus.PREPARING,
+                "12 MG Road, Bengaluru", 80.0, 30.0, 0.0, 110.0);
 
-        Order placed = orderService.place(new PlaceOrderRequest(
-                1L, List.of(new OrderItemRequest("Dosa", 1, 80.0)), null));
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(existing));
 
-        // Skip to PREPARING first (so CANCELLED is illegal)
-        orderService.updateStatus(placed.id(), OrderStatus.CONFIRMED);
-        orderService.updateStatus(placed.id(), OrderStatus.PREPARING);
-
-        assertThatThrownBy(() ->
-                orderService.updateStatus(placed.id(), OrderStatus.CANCELLED))
+        assertThatThrownBy(() -> orderService.updateStatus(1L, OrderStatus.CANCELLED))
                 .isInstanceOf(IllegalStateException.class);
 
-        // Notification was called for CONFIRMED and PREPARING, but NOT for the failed CANCELLED
-        verify(notificationClient, times(2)).notifyStatusChange(any(), any());
+        verifyNoInteractions(notificationClient);
     }
 
     @Test
     void findByUser_returnsOnlyOrdersForThatUser() {
-        when(userClient.getUser(1L)).thenReturn(Optional.of(alice));
-        when(userClient.getDefaultAddress(1L)).thenReturn(Optional.of(defaultAddress));
+        Order o1 = new Order(1L, OrderStatus.PLACED, "Addr", 100.0, 30.0, 0.0, 130.0);
+        Order o2 = new Order(1L, OrderStatus.PLACED, "Addr", 50.0, 30.0, 0.0, 80.0);
 
-        orderService.place(new PlaceOrderRequest(
-                1L, List.of(new OrderItemRequest("Idli", 2, 50.0)), null));
-        orderService.place(new PlaceOrderRequest(
-                1L, List.of(new OrderItemRequest("Vada", 1, 40.0)), null));
+        when(orderRepository.findByUserId(1L)).thenReturn(List.of(o1, o2));
+        when(orderRepository.findByUserId(2L)).thenReturn(List.of());
 
         assertThat(orderService.findByUser(1L)).hasSize(2);
         assertThat(orderService.findByUser(2L)).isEmpty();

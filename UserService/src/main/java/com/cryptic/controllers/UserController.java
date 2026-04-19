@@ -1,7 +1,7 @@
 package com.cryptic.controllers;
 
 import com.cryptic.model.Address;
-import com.cryptic.model.UserProfile;
+import com.cryptic.model.User;
 import com.cryptic.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,7 +22,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserProfile> getUser(@PathVariable Long id) {
+    public ResponseEntity<User> getUser(@PathVariable Long id) {
         return userService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

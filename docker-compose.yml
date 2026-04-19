@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: delihvery-postgres
+    environment:
+      POSTGRES_USER: delihvery
+      POSTGRES_PASSWORD: delihvery123
+      POSTGRES_DB: delihvery
+    ports:
+      - "5431:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  mongodb:
+    image: mongo:7
+    container_name: delihvery-mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: delihvery
+      MONGO_INITDB_ROOT_PASSWORD: delihvery123
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  postgres_data:
+  mongo_data:

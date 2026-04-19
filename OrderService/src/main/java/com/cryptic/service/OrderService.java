@@ -4,6 +4,8 @@ import com.cryptic.client.NotificationClient;
 import com.cryptic.client.UserClient;
 import com.cryptic.dto.PlaceOrderRequest;
 import com.cryptic.model.*;
+import com.cryptic.repo.OrderRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -14,25 +16,28 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Service
+@Transactional
 public class OrderService {
+
+    private final OrderRepository orderRepository;
     private final UserClient userClient;
     private final PricingService pricingService;
     private final OrderStatusService statusService;
     private final NotificationClient notificationClient;
 
-    private final Map<Long, Order> orders = new LinkedHashMap<>();
-    private final AtomicLong idGen = new AtomicLong(1);
-
-    public OrderService(UserClient userClient,
+    public OrderService(OrderRepository orderRepository,
+                        UserClient userClient,
                         PricingService pricingService,
                         OrderStatusService statusService,
                         NotificationClient notificationClient) {
+        this.orderRepository = orderRepository;
         this.userClient = userClient;
         this.pricingService = pricingService;
         this.statusService = statusService;
         this.notificationClient = notificationClient;
     }
 
+    @Transactional
     public Order place(PlaceOrderRequest req) {
         UserProfile user = userClient.getUser(req.userId())
                 .orElseThrow(() -> new IllegalArgumentException(
@@ -44,53 +49,42 @@ public class OrderService {
 
         PricingSummary pricing = pricingService.calculate(req.items(), req.couponCode());
 
-        List<OrderItem> items = req.items().stream()
-                .map(i -> new OrderItem(i.name(), i.quantity(), i.unitPrice()))
-                .toList();
-
         Order order = new Order(
-                idGen.getAndIncrement(),
                 req.userId(),
-                items,
-                pricing,
                 OrderStatus.PLACED,
-                delivery.line1() + ", " + delivery.city(),
-                Instant.now(),
-                Instant.now()
+                delivery.getLine1() + ", " + delivery.getCity(),
+                pricing.subtotal(), pricing.deliveryFee(),
+                pricing.discount(), pricing.total()
         );
 
-        orders.put(order.id(), order);
-        notificationClient.notifyOrderPlaced(user.email(), order);
-        return order;
+        req.items().forEach(i ->
+                order.getItems().add(new OrderItem(order, i.name(), i.quantity(), i.unitPrice()))
+        );
+
+        Order saved = orderRepository.save(order);
+        notificationClient.notifyOrderPlaced(user.getEmail(), saved);
+        return saved;
     }
 
+    @Transactional
     public Order updateStatus(Long orderId, OrderStatus newStatus) {
-        Order order = findById(orderId)
+        Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId));
 
-        statusService.validate(order.status(), newStatus);
+        statusService.validate(order.getStatus(), newStatus);
+        order.updateStatus(newStatus);
 
-        Order updated = new Order(
-                order.id(), order.userId(), order.items(), order.pricing(),
-                newStatus, order.deliveryAddress(), order.placedAt(), Instant.now()
-        );
-        orders.put(updated.id(), updated);
-
-        UserProfile user = userClient.getUser(order.userId()).orElse(null);
-        if (user != null) {
-            notificationClient.notifyStatusChange(user.email(), updated);
-        }
-
-        return updated;
+        Order saved = orderRepository.save(order);
+        userClient.getUser(order.getUserId())
+                .ifPresent(u -> notificationClient.notifyStatusChange(u.getEmail(), saved));
+        return saved;
     }
 
     public Optional<Order> findById(Long id) {
-        return Optional.ofNullable(orders.get(id));
+        return orderRepository.findById(id);
     }
 
     public List<Order> findByUser(Long userId) {
-        return orders.values().stream()
-                .filter(o -> o.userId().equals(userId))
-                .toList();
+        return orderRepository.findByUserId(userId);
     }
 }

@@ -19,13 +19,15 @@ public class NotificationClient {
     }
 
     public void notifyOrderPlaced(String email, Order order) {
-        send(email, "Order #" + order.id() + " placed!",
-                "Total: ₹" + order.pricing().total());
+        send(email,
+                "Order #" + order.getId() + " placed!",
+                "Total: ₹" + order.getTotal());
     }
 
     public void notifyStatusChange(String email, Order order) {
-        send(email, "Order #" + order.id() + " update",
-                "Status is now: " + order.status());
+        send(email,
+                "Order #" + order.getId() + " update",
+                "Status is now: " + order.getStatus());
     }
 
     private void send(String email, String subject, String body) {

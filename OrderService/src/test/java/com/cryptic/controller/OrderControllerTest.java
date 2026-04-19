@@ -32,12 +32,8 @@ public class OrderControllerTest {
 
     private Order sampleOrder(OrderStatus status) {
         return new Order(
-                1L, 1L,
-                List.of(new OrderItem("Butter Chicken", 2, 180.0)),
-                new PricingSummary(360.0, 0.0, 0.0, 360.0),
-                status,
-                "12 MG Road, Bengaluru",
-                Instant.now(), Instant.now()
+                1L, status, "12 MG Road, Bengaluru",
+                360.0, 0.0, 0.0, 360.0
         );
     }
 
@@ -58,7 +54,7 @@ public class OrderControllerTest {
                         .content(body))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("PLACED"))
-                .andExpect(jsonPath("$.pricing.total").value(360.0));
+                .andExpect(jsonPath("$.total").value(360.0));
     }
 
     @Test

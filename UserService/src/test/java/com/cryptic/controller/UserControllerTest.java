@@ -3,7 +3,7 @@ package com.cryptic.controller;
 import com.cryptic.controllers.UserController;
 import com.cryptic.model.Address;
 import com.cryptic.model.FoodPreferences;
-import com.cryptic.model.UserProfile;
+import com.cryptic.model.User;
 import com.cryptic.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,14 +22,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 public class UserControllerTest {
 
     @Autowired MockMvc mockMvc;
-    @MockBean UserService userService;
+    @MockBean  UserService userService;
 
-    private UserProfile sampleUser() {
-        return new UserProfile(
-                1L, "Alice", "alice@example.com", "9000000001",
-                List.of(new Address(1L, "Home", "12 MG Road", "Bengaluru", "560001", true)),
-                new FoodPreferences(false, List.of(), List.of("North Indian"))
-        );
+    private User sampleUser() {
+        return new User("Alice", "alice@example.com", "9000000001");
+    }
+
+    private Address sampleAddress(User user) {
+        return new Address(user, "Home", "12 MG Road", "Bengaluru", "560001", true);
     }
 
     @Test
@@ -52,7 +52,8 @@ public class UserControllerTest {
 
     @Test
     void getDefaultAddress_exists_returns200() throws Exception {
-        Address addr = new Address(1L, "Home", "12 MG Road", "Bengaluru", "560001", true);
+        User user = sampleUser();
+        Address addr = sampleAddress(user);
         when(userService.getDefaultAddress(1L)).thenReturn(Optional.of(addr));
 
         mockMvc.perform(get("/users/1/addresses/default"))
@@ -63,9 +64,9 @@ public class UserControllerTest {
 
     @Test
     void getAddresses_returns200WithList() throws Exception {
-        when(userService.getAddresses(1L)).thenReturn(
-                List.of(new Address(1L, "Home", "12 MG Road", "Bengaluru", "560001", true))
-        );
+        User user = sampleUser();
+        when(userService.getAddresses(1L))
+                .thenReturn(List.of(sampleAddress(user)));
 
         mockMvc.perform(get("/users/1/addresses"))
                 .andExpect(status().isOk())

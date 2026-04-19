@@ -14,6 +14,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -26,23 +27,32 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@TestPropertySource(properties = {
+        "spring.autoconfigure.exclude=" +
+                "org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration," +
+                "org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration"
+})
 public class OrderIntegrationTest {
+
     @Autowired MockMvc mockMvc;
 
     @TestConfiguration
     static class Stubs {
 
-        @Bean
-        @Primary
+        @Bean @Primary
         UserClient userClient() {
             return new UserClient(null, null) {
-                @Override public Optional<UserProfile> getUser(Long id) {
+                @Override
+                public Optional<UserProfile> getUser(Long id) {
                     if (id == 1L) return Optional.of(new UserProfile(
                             1L, "Alice", "alice@example.com", "9000000001",
-                            List.of(), new FoodPreferences(false, List.of(), List.of())));
+                            List.of(), new FoodPreferences(false, List.of(), List.of())
+                    ));
                     return Optional.empty();
                 }
-                @Override public Optional<Address> getDefaultAddress(Long id) {
+
+                @Override
+                public Optional<Address> getDefaultAddress(Long id) {
                     if (id == 1L) return Optional.of(
                             new Address(1L, "Home", "12 MG Road", "Bengaluru", "560001", true));
                     return Optional.empty();
@@ -61,7 +71,6 @@ public class OrderIntegrationTest {
 
     @Test
     void fullOrderLifecycle_placeThenConfirmThenDeliver() throws Exception {
-        // Place
         String placeBody = """
             {
               "userId": 1,
@@ -75,33 +84,28 @@ public class OrderIntegrationTest {
                         .content(placeBody))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("PLACED"))
-                .andExpect(jsonPath("$.pricing.discount").value(10.0))
+                .andExpect(jsonPath("$.discount").value(10.0))  // flat field now
                 .andReturn().getResponse().getContentAsString();
 
-        // Extract order id — simplest way without an extra dependency
         Long orderId = com.fasterxml.jackson.databind.json.JsonMapper.builder()
                 .build().readTree(response).get("id").asLong();
 
-        // Confirm
         mockMvc.perform(patch("/orders/" + orderId + "/status")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"status\": \"CONFIRMED\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("CONFIRMED"));
 
-        // Preparing
         mockMvc.perform(patch("/orders/" + orderId + "/status")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"status\": \"PREPARING\"}"))
                 .andExpect(status().isOk());
 
-        // Try illegal cancel — must fail
         mockMvc.perform(patch("/orders/" + orderId + "/status")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"status\": \"CANCELLED\"}"))
                 .andExpect(status().isBadRequest());
 
-        // Out for delivery → delivered
         mockMvc.perform(patch("/orders/" + orderId + "/status")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"status\": \"OUT_FOR_DELIVERY\"}"))

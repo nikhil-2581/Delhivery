@@ -1,6 +1,9 @@
 /Users/mr.cryptic/Desktop/Delihvery/UserService/src/main/java/com/cryptic/model/FoodPreferences.java
 /Users/mr.cryptic/Desktop/Delihvery/UserService/src/main/java/com/cryptic/controllers/UserController.java
-/Users/mr.cryptic/Desktop/Delihvery/UserService/src/main/java/com/cryptic/model/UserProfile.java
+/Users/mr.cryptic/Desktop/Delihvery/UserService/src/main/java/com/cryptic/config/DataSeeder.java
+/Users/mr.cryptic/Desktop/Delihvery/UserService/src/main/java/com/cryptic/model/User.java
+/Users/mr.cryptic/Desktop/Delihvery/UserService/src/main/java/com/cryptic/repo/AddressRepository.java
 /Users/mr.cryptic/Desktop/Delihvery/UserService/src/main/java/com/cryptic/model/Address.java
 /Users/mr.cryptic/Desktop/Delihvery/UserService/src/main/java/com/cryptic/service/UserService.java
 /Users/mr.cryptic/Desktop/Delihvery/UserService/src/main/java/com/cryptic/User.java
+/Users/mr.cryptic/Desktop/Delihvery/UserService/src/main/java/com/cryptic/repo/UserRepository.java
