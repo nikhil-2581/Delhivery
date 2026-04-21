@@ -4,37 +4,44 @@ import com.cryptic.dto.OrderItemRequest;
 import com.cryptic.model.PricingSummary;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
 
 @Service
 public class PricingService {
-    private static final double DELIVERY_FEE = 30.0;
-    private static final double FREE_DELIVERY_THRESHOLD = 299.0;
 
-    private static final Map<String, Double> COUPONS = Map.of(
-            "FIRST10", 10.0,   // flat ₹10
-            "SAVE50",  50.0,
-            "FLAT100", 100.0
+    private static final BigDecimal DELIVERY_FEE = new BigDecimal("30.00");
+    private static final BigDecimal FREE_DELIVERY_THRESHOLD = new BigDecimal("299.00");
+
+    private static final Map<String, BigDecimal> COUPONS = Map.of(
+            "FIRST10", new BigDecimal("10.00"),
+            "SAVE50",  new BigDecimal("50.00"),
+            "FLAT100", new BigDecimal("100.00")
     );
 
     public PricingSummary calculate(List<OrderItemRequest> items, String couponCode) {
-        double subtotal = items.stream()
-                .mapToDouble(i -> i.unitPrice() * i.quantity())
-                .sum();
+        BigDecimal subtotal = items.stream()
+                .map(i -> i.unitPrice().multiply(BigDecimal.valueOf(i.quantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
 
-        double discount = resolveCoupon(couponCode, subtotal);
-        double deliveryFee = subtotal >= FREE_DELIVERY_THRESHOLD ? 0.0 : DELIVERY_FEE;
-        double total = Math.max(0, subtotal - discount) + deliveryFee;
+        BigDecimal discount = resolveCoupon(couponCode, subtotal);
+        BigDecimal deliveryFee = subtotal.compareTo(FREE_DELIVERY_THRESHOLD) >= 0
+                ? BigDecimal.ZERO : DELIVERY_FEE;
+        BigDecimal total = subtotal.subtract(discount).add(deliveryFee)
+                .max(BigDecimal.ZERO)
+                .setScale(2, RoundingMode.HALF_UP);
 
         return new PricingSummary(subtotal, deliveryFee, discount, total);
     }
 
-    private double resolveCoupon(String code, double subtotal) {
-        if (code == null || code.isBlank()) return 0.0;
-        Double flat = COUPONS.get(code.toUpperCase());
+    private BigDecimal resolveCoupon(String code, BigDecimal subtotal) {
+        if (code == null || code.isBlank()) return BigDecimal.ZERO;
+        BigDecimal flat = COUPONS.get(code.toUpperCase());
         if (flat == null) throw new IllegalArgumentException("Invalid coupon: " + code);
-        if (flat > subtotal) throw new IllegalArgumentException(
+        if (flat.compareTo(subtotal) > 0) throw new IllegalArgumentException(
                 "Coupon discount cannot exceed order value");
         return flat;
     }

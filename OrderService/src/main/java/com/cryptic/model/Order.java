@@ -2,6 +2,7 @@ package com.cryptic.model;
 
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,16 +30,16 @@ public class Order {
     private List<OrderItem> items = new ArrayList<>();
 
     @Column(nullable = false)
-    private double subtotal;
+    private BigDecimal subtotal;
 
     @Column(name = "delivery_fee", nullable = false)
-    private double deliveryFee;
+    private BigDecimal deliveryFee;
 
     @Column(nullable = false)
-    private double discount;
+    private BigDecimal discount;
 
     @Column(nullable = false)
-    private double total;
+    private BigDecimal total;
 
     @Column(name = "placed_at", nullable = false)
     private Instant placedAt;
@@ -49,7 +50,7 @@ public class Order {
     protected Order() {}
 
     public Order(Long userId, OrderStatus status, String deliveryAddress,
-                 double subtotal, double deliveryFee, double discount, double total) {
+                 BigDecimal subtotal, BigDecimal deliveryFee, BigDecimal discount, BigDecimal total) {
         this.userId = userId;
         this.status = status;
         this.deliveryAddress = deliveryAddress;
@@ -71,10 +72,10 @@ public class Order {
     public OrderStatus getStatus()       { return status; }
     public String getDeliveryAddress()   { return deliveryAddress; }
     public List<OrderItem> getItems()    { return items; }
-    public double getSubtotal()          { return subtotal; }
-    public double getDeliveryFee()       { return deliveryFee; }
-    public double getDiscount()          { return discount; }
-    public double getTotal()             { return total; }
+    public BigDecimal getSubtotal()          { return subtotal; }
+    public BigDecimal getDeliveryFee()       { return deliveryFee; }
+    public BigDecimal getDiscount()          { return discount; }
+    public BigDecimal getTotal()             { return total; }
     public Instant getPlacedAt()         { return placedAt; }
     public Instant getUpdatedAt()        { return updatedAt; }
 }

@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -50,8 +51,10 @@ public class OrderServiceTest {
 
     private Order savedOrder(Long id, OrderStatus status) {
         Order o = new Order(1L, status, "12 MG Road, Bengaluru",
-                360.0, 0.0, 0.0, 360.0);
-        // simulate what DB would return with an id
+                new BigDecimal("360.00"),
+                new BigDecimal("0.00"),
+                new BigDecimal("0.00"),
+                new BigDecimal("360.00"));
         return o;
     }
 
@@ -63,14 +66,14 @@ public class OrderServiceTest {
 
         PlaceOrderRequest req = new PlaceOrderRequest(
                 1L,
-                List.of(new OrderItemRequest("Butter Chicken", 2, 180.0)),
+                List.of(new OrderItemRequest("Butter Chicken", 2, new BigDecimal("180.00"))),
                 null
         );
 
         Order result = orderService.place(req);
 
         assertThat(result.getStatus()).isEqualTo(OrderStatus.PLACED);
-        assertThat(result.getSubtotal()).isEqualTo(360.0);
+        assertThat(result.getSubtotal()).isEqualTo(new BigDecimal("360.00"));
         assertThat(result.getDeliveryAddress()).contains("Bengaluru");
         verify(notificationClient).notifyOrderPlaced(eq("alice@example.com"), any());
     }
@@ -80,7 +83,7 @@ public class OrderServiceTest {
         when(userClient.getUser(99L)).thenReturn(Optional.empty());
 
         PlaceOrderRequest req = new PlaceOrderRequest(
-                99L, List.of(new OrderItemRequest("Item", 1, 100.0)), null);
+                99L, List.of(new OrderItemRequest("Item", 1, new BigDecimal("100.00"))), null);
 
         assertThatThrownBy(() -> orderService.place(req))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -95,7 +98,7 @@ public class OrderServiceTest {
         when(userClient.getDefaultAddress(1L)).thenReturn(Optional.empty());
 
         PlaceOrderRequest req = new PlaceOrderRequest(
-                1L, List.of(new OrderItemRequest("Item", 1, 100.0)), null);
+                1L, List.of(new OrderItemRequest("Item", 1, new BigDecimal("100.00"))), null);
 
         assertThatThrownBy(() -> orderService.place(req))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -105,7 +108,11 @@ public class OrderServiceTest {
     @Test
     void updateStatus_legalTransition_updatesOrder() {
         Order existing = new Order(1L, OrderStatus.PLACED,
-                "12 MG Road, Bengaluru", 80.0, 30.0, 0.0, 110.0);
+                "12 MG Road, Bengaluru",
+                new BigDecimal("80.00"),
+                new BigDecimal("30.00"),
+                new BigDecimal("0.00"),
+                new BigDecimal("110.00"));
 
         when(orderRepository.findById(1L)).thenReturn(Optional.of(existing));
         when(orderRepository.save(any())).thenAnswer(i -> i.getArgument(0));
@@ -120,7 +127,11 @@ public class OrderServiceTest {
     @Test
     void updateStatus_illegalTransition_throwsAndDoesNotNotify() {
         Order existing = new Order(1L, OrderStatus.PREPARING,
-                "12 MG Road, Bengaluru", 80.0, 30.0, 0.0, 110.0);
+                "12 MG Road, Bengaluru",
+                new BigDecimal("80.00"),
+                new BigDecimal("30.00"),
+                new BigDecimal("0.00"),
+                new BigDecimal("110.00"));
 
         when(orderRepository.findById(1L)).thenReturn(Optional.of(existing));
 
@@ -132,8 +143,16 @@ public class OrderServiceTest {
 
     @Test
     void findByUser_returnsOnlyOrdersForThatUser() {
-        Order o1 = new Order(1L, OrderStatus.PLACED, "Addr", 100.0, 30.0, 0.0, 130.0);
-        Order o2 = new Order(1L, OrderStatus.PLACED, "Addr", 50.0, 30.0, 0.0, 80.0);
+        Order o1 = new Order(1L, OrderStatus.PLACED, "Addr",
+                new BigDecimal("100.00"),
+                new BigDecimal("30.00"),
+                new BigDecimal("0.00"),
+                new BigDecimal("130.00"));
+        Order o2 = new Order(1L, OrderStatus.PLACED, "Addr",
+                new BigDecimal("50.00"),
+                new BigDecimal("30.00"),
+                new BigDecimal("0.00"),
+                new BigDecimal("80.00"));
 
         when(orderRepository.findByUserId(1L)).thenReturn(List.of(o1, o2));
         when(orderRepository.findByUserId(2L)).thenReturn(List.of());

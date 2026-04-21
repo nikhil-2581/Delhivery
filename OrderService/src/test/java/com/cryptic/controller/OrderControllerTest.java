@@ -13,6 +13,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -33,7 +34,10 @@ public class OrderControllerTest {
     private Order sampleOrder(OrderStatus status) {
         return new Order(
                 1L, status, "12 MG Road, Bengaluru",
-                360.0, 0.0, 0.0, 360.0
+                new BigDecimal("360.00"),
+                new BigDecimal("0.00"),
+                new BigDecimal("0.00"),
+                new BigDecimal("360.00")
         );
     }
 

@@ -2,6 +2,8 @@ package com.cryptic.model;
 
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "order_items")
 public class OrderItem {
@@ -21,11 +23,11 @@ public class OrderItem {
     private int quantity;
 
     @Column(name = "unit_price", nullable = false)
-    private double unitPrice;
+    private BigDecimal unitPrice;
 
     protected OrderItem() {}
 
-    public OrderItem(Order order, String name, int quantity, double unitPrice) {
+    public OrderItem(Order order, String name, int quantity, BigDecimal unitPrice) {
         this.order = order;
         this.name = name;
         this.quantity = quantity;
@@ -35,5 +37,5 @@ public class OrderItem {
     public Long getId()         { return id; }
     public String getName()     { return name; }
     public int getQuantity()    { return quantity; }
-    public double getUnitPrice(){ return unitPrice; }
+    public BigDecimal getUnitPrice(){ return unitPrice; }
 }

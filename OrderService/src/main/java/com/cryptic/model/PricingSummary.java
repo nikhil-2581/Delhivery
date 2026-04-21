@@ -1,8 +1,10 @@
 package com.cryptic.model;
 
+import java.math.BigDecimal;
+
 public record PricingSummary(
-        double subtotal,
-        double deliveryFee,
-        double discount,
-        double total
+        BigDecimal subtotal,
+        BigDecimal deliveryFee,
+        BigDecimal discount,
+        BigDecimal total
 ) {}
