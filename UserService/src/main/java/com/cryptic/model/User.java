@@ -21,6 +21,15 @@ public class User {
     @Column(nullable = false)
     private String phone;
 
+    @Column(name = "password_hash", nullable = false)
+    private String passwordHash;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false,columnDefinition = "user_role")
+    @org.hibernate.annotations.JdbcType(
+            org.hibernate.dialect.PostgreSQLEnumJdbcType.class)
+    private Role role;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Address> addresses = new ArrayList<>();
 
@@ -29,16 +38,21 @@ public class User {
 
     protected User() {}
 
-    public User(String name, String email, String phone) {
+    public User(String name, String email, String phone,
+                String passwordHash, Role role) {
         this.name = name;
         this.email = email;
         this.phone = phone;
+        this.passwordHash = passwordHash;
+        this.role = role;
     }
 
     public Long getId()                    { return id; }
     public String getName()               { return name; }
     public String getEmail()              { return email; }
     public String getPhone()              { return phone; }
+    public String getPasswordHash()          { return passwordHash; }
+    public Role getRole()                    { return role; }
     public List<Address> getAddresses()   { return addresses; }
     public FoodPreferences getPreferences() { return preferences; }
 }

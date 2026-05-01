@@ -1,6 +1,7 @@
 package com.cryptic.service;
 
 import com.cryptic.model.Address;
+import com.cryptic.model.Role;
 import com.cryptic.model.User;
 import com.cryptic.repo.AddressRepository;
 import com.cryptic.repo.UserRepository;
@@ -34,7 +35,8 @@ public class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        alice = new User("Alice", "alice@example.com", "9000000001");
+        alice = new User("Alice", "alice@example.com", "9000000001",
+                "hashed_password", Role.CUSTOMER);
         homeAddress = new Address(alice, "Home", "12 MG Road", "Bengaluru", "560001", true);
         workAddress = new Address(alice, "Work", "91 Koramangala", "Bengaluru", "560034", false);
     }

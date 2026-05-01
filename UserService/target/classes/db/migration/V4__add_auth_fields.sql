@@ -1,0 +1,5 @@
+CREATE TYPE user_role AS ENUM ('CUSTOMER', 'DRIVER', 'ADMIN');
+
+ALTER TABLE users
+    ADD COLUMN password_hash VARCHAR(255) NOT NULL DEFAULT '',
+    ADD COLUMN role          user_role    NOT NULL DEFAULT 'CUSTOMER';

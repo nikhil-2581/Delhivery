@@ -32,7 +32,7 @@ public class PricingServiceTest {
     @Test
     void calculate_aboveThreshold_freeDelivery() {
         PricingSummary result = pricingService.calculate(items("300.00"), null);
-        assertThat(result.deliveryFee()).isEqualTo(new BigDecimal("0.00"));
+        assertThat(result.deliveryFee().compareTo(BigDecimal.ZERO)).isZero();
         assertThat(result.total()).isEqualTo(new BigDecimal("300.00"));
     }
 
@@ -65,12 +65,12 @@ public class PricingServiceTest {
         );
         PricingSummary result = pricingService.calculate(items, null);
         assertThat(result.subtotal()).isEqualTo(new BigDecimal("480.00")); // 360 + 120
-        assertThat(result.deliveryFee()).isEqualTo(new BigDecimal("0.00")); // above threshold
+        assertThat(result.deliveryFee().compareTo(BigDecimal.ZERO)).isZero();// above threshold
     }
 
     @Test
     void calculate_blankCouponCode_treatedAsNoCoupon() {
         PricingSummary result = pricingService.calculate(items("100.00"), "   ");
-        assertThat(result.discount()).isEqualTo(new BigDecimal("0.00"));
+        assertThat(result.discount().compareTo(BigDecimal.ZERO)).isZero();
     }
 }

@@ -29,7 +29,7 @@ public class PricingService {
 
         BigDecimal discount = resolveCoupon(couponCode, subtotal);
         BigDecimal deliveryFee = subtotal.compareTo(FREE_DELIVERY_THRESHOLD) >= 0
-                ? BigDecimal.ZERO : DELIVERY_FEE;
+                ? BigDecimal.ZERO.setScale(2) : DELIVERY_FEE; // ← add setScale
         BigDecimal total = subtotal.subtract(discount).add(deliveryFee)
                 .max(BigDecimal.ZERO)
                 .setScale(2, RoundingMode.HALF_UP);
@@ -38,7 +38,7 @@ public class PricingService {
     }
 
     private BigDecimal resolveCoupon(String code, BigDecimal subtotal) {
-        if (code == null || code.isBlank()) return BigDecimal.ZERO;
+        if (code == null || code.isBlank()) return BigDecimal.ZERO.setScale(2); // ← add setScale
         BigDecimal flat = COUPONS.get(code.toUpperCase());
         if (flat == null) throw new IllegalArgumentException("Invalid coupon: " + code);
         if (flat.compareTo(subtotal) > 0) throw new IllegalArgumentException(

@@ -36,12 +36,6 @@ public class UserService {
     }
 
     @Transactional
-    public User createUser(String name, String email, String phone) {
-        User user = new User(name, email, phone);
-        return userRepository.save(user);
-    }
-
-    @Transactional
     public Address addAddress(Long userId, String label, String line1,
                               String city, String pincode, boolean isDefault) {
         User user = userRepository.findById(userId)
@@ -50,7 +44,8 @@ public class UserService {
         if (isDefault) {
             addressRepository.findByUserIdAndIsDefaultTrue(userId)
                     .ifPresent(existing -> {
-                        throw new IllegalStateException("A default address already exists. Update it first.");
+                        throw new IllegalStateException(
+                                "A default address already exists. Update it first.");
                     });
         }
 

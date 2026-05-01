@@ -8,11 +8,12 @@ services:
     environment:
       POSTGRES_USER: delihvery
       POSTGRES_PASSWORD: delihvery123
-      POSTGRES_DB: delihvery
+      POSTGRES_DB: userdb,orderdb
     ports:
       - "5431:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
 
   mongodb:
     image: mongo:7

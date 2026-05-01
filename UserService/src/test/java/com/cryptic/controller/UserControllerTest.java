@@ -3,12 +3,18 @@ package com.cryptic.controller;
 import com.cryptic.controllers.UserController;
 import com.cryptic.model.Address;
 import com.cryptic.model.FoodPreferences;
+import com.cryptic.model.Role;
 import com.cryptic.model.User;
+import com.cryptic.security.JwtAuthFilter;
+import com.cryptic.security.JwtService;
 import com.cryptic.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -18,14 +24,22 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 
-@WebMvcTest(UserController.class)
+@WebMvcTest(
+        controllers = UserController.class,
+        excludeAutoConfiguration = {
+                SecurityAutoConfiguration.class,
+                SecurityFilterAutoConfiguration.class
+        }
+)
 public class UserControllerTest {
 
     @Autowired MockMvc mockMvc;
     @MockBean  UserService userService;
+    @MockBean JwtService jwtService;
 
     private User sampleUser() {
-        return new User("Alice", "alice@example.com", "9000000001");
+        return new User("Alice", "alice@example.com", "9000000001",
+                "hashed_password", Role.CUSTOMER);
     }
 
     private Address sampleAddress(User user) {
